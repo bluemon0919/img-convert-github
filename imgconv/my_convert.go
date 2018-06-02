@@ -9,6 +9,8 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"path"
+	"strings"
 )
 
 // Format is defines the image format.
@@ -70,10 +72,12 @@ func (ic ImgConvert) decodeTo() (image.Image, error) {
 func (ic ImgConvert) encodeTo(img image.Image) error {
 	var outputFile *os.File
 	var err error
+	withoutExt := ic.Path[:strings.LastIndex(ic.Path, path.Ext(ic.Path))]
 	if JPG == ic.OutFormat {
-		if outputFile, err = os.Create(ic.Path + ".jpg"); err != nil {
+		if outputFile, err = os.Create(withoutExt + ".jpg"); err != nil {
 			return fmt.Errorf("create error")
 		}
+		println("path" + path.Ext(ic.Path))
 		defer outputFile.Close()
 
 		opts := &jpeg.Options{Quality: ic.Jquality}
@@ -81,9 +85,10 @@ func (ic ImgConvert) encodeTo(img image.Image) error {
 			return fmt.Errorf("jpeg.encode error")
 		}
 	} else {
-		if outputFile, err = os.Create(ic.Path + ".png"); err != nil {
+		if outputFile, err = os.Create(withoutExt + ".png"); err != nil {
 			return fmt.Errorf("create error")
 		}
+		println("path" + path.Ext(ic.Path))
 		defer outputFile.Close()
 
 		if err := png.Encode(outputFile, img); err != nil {

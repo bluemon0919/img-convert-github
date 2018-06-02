@@ -70,7 +70,11 @@ func getFileName(dir string) []string {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			getFileName(dir + `\` + file.Name())
+			var underPaths []string
+			underPaths = getFileName(dir + `\` + file.Name())
+			for _, path := range underPaths {
+				paths = append(paths, path)
+			}
 		} else if path.Ext(file.Name()) == ".jpg" {
 			paths = append(paths, dir+`\`+file.Name())
 		} else {
