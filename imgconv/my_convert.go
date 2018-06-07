@@ -4,10 +4,11 @@
 package imgconv
 
 import (
+	"errors"
 	"fmt"
 	"image"
-	"image/jpeg"
-	"image/png"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"path"
 	"strings"
@@ -19,7 +20,7 @@ type Format int
 // ImgConvert is a parameter required for image format ImgConvert.
 // Set input / output format, input image path, etc.
 type ImgConvert struct {
-	InFormat  Format // InFormat is input image format.
+	InFormat  string // InFormat is input image format.
 	OutFormat Format // OutFormat is output image format.
 	Path      string // TargetDir is input image path
 	Jquality  int    // Jquality is the quality when converting JPEG.
@@ -35,7 +36,7 @@ const (
 )
 
 // ConvertTo converts the image format according to the given parameters.
-func (ic ImgConvert) ConvertTo() error {
+func (ic *ImgConvert) ConvertTo() error {
 	var err error
 	var img image.Image
 	if img, err = ic.decodeTo(); err != nil {
@@ -48,34 +49,27 @@ func (ic ImgConvert) ConvertTo() error {
 }
 
 // decodeTo decodes image data to image.Image format.
-func (ic ImgConvert) decodeTo() (image.Image, error) {
+func (ic *ImgConvert) decodeTo() (image.Image, error) {
 	var img image.Image
-	var inputFile *os.File
-	var err error
-	if inputFile, err = os.Open(ic.Path); err != nil {
-		return img, fmt.Errorf("open error")
-	}
+	inputFile, err := os.Open(ic.Path)
 	defer inputFile.Close()
-	if JPG == ic.InFormat {
-		if img, err = jpeg.Decode(inputFile); err != nil {
-			return img, fmt.Errorf("jpeg.decode error")
-		}
-	} else {
-		if img, err = png.Decode(inputFile); err != nil {
-			return img, fmt.Errorf("png.decode error")
-		}
+	if nil != err {
+		return img, errors.Wrap(err, "file open error")
+	}
+	if img, ic.InFormat, err = image.Decode(inputFile); err != nil {
+		return img, errors.Wrap(err, "decode error")
 	}
 	return img, nil
 }
 
 // encodeTo generates an image file according to specified parameters.
-func (ic ImgConvert) encodeTo(img image.Image) error {
+func (ic *ImgConvert) encodeTo(img image.Image) error {
 	var outputFile *os.File
 	var err error
 	withoutExt := ic.Path[:strings.LastIndex(ic.Path, path.Ext(ic.Path))]
 	if JPG == ic.OutFormat {
 		if outputFile, err = os.Create(withoutExt + ".jpg"); err != nil {
-			return fmt.Errorf("create error")
+			return errors.Wrap(err, "create file error")
 		}
 		println("path" + path.Ext(ic.Path))
 		defer outputFile.Close()
